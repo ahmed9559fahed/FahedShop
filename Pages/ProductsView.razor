@@ -1,0 +1,74 @@
+﻿@page "/products"
+@using ShopLinux.Models
+@using ShopLinux.Repositories
+
+<h3>All Products</h3>
+
+
+<div class="container-fluid">
+
+    <div class="row mt-2">
+        @foreach (var product in Products)
+        {
+            var image = $"Images/{product.Image}";
+            <div class="col-xl-4 col-lg-auto col-md-12">
+                <div class="card bg-light shadow-sm m-3">
+                    <img src=@image class=" card-img-top" style="height: 100%; width: 100%;" alt="logo" />
+                    <div class="card-body bg-white">
+                        <div class="row justify-content-between mx-1">
+                            <div>
+                                <h5 class="card-title text-primary font-weight-bold">@product.Name</h5>
+                            </div>
+                        </div>
+                        <div class="row justify-content-between mx-1">
+                            <div>
+                                <h5 class="card-title text-secondary">@product.Description</h5>
+                            </div>
+                        </div>
+                        <div class="row justify-content-start mx-1">
+                            <table class="table table-sm table-borderless mb-0 pb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Price</th>
+                                        <th scope="col" class="text-right">Objects</th>
+                                    </tr>
+                                </thead>
+                                <tr>
+                                    <td>@product.Price €</td>
+                                    <td class="text-right">1</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer text-primary text-center bg-light" style="cursor: pointer">
+                        <button class="btn btn-outline-primary" @onclick="@(() => AddToPasket(product.Id))">
+                            <strong>Add To Pasket</strong>
+                        </button>
+                       
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+@code {  
+
+    public List<Product> Products { get; set; } = new List<Product>();
+
+    protected override void OnInitialized()
+    {
+        Products = ProductRepository.GetProducts();
+        base.OnInitialized();
+    }
+
+    [Inject]
+    private ProductRepository ProductRepository { get; set; }
+    private void AddToPasket(Guid ProductId)
+    {
+
+    }
+
+  
+}

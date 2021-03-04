@@ -1,0 +1,85 @@
+﻿@page "/addProduct"
+@using ShopLinux.Models
+@using ShopLinux.Repositories
+@using System.IO
+<h3 class="row justify-content-center">AddProduct</h3>
+<hr class="mb-2" />
+@if (IsSuccessAdded)
+{
+    <div class="alert alert-success" role="alert">
+        success Add
+    </div>
+}
+<form>
+    <div class="form-group row">
+        <label for="inputName" class="col-sm-2 col-form-label">Name</label>
+        <div class="col-sm-10">
+            <input type="text" class="form-control" id="inputName" placeholder="Productname" @bind="@NewProduct.Name">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="inputDescription" class="col-sm-2 col-form-label">Description</label>
+        <div class="col-sm-10">
+            <textarea class="form-control" rows="5" id="inputDescription" placeholder="Description" @bind="@NewProduct.Description" />
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="inputName" class="col-sm-2 col-form-label">Price</label>
+        <div class="col-sm-10">
+            <input type="number" class="form-control" id="inputName" min="0" @bind="@NewProduct.Price">
+        </div>
+    </div>
+    <div class="form-group row">
+        <label for="inputName" class="col-sm-2 col-form-label">Image</label>
+        <div class="col-sm-10">
+            <InputFile OnChange="OnInputFileChange" multiple />
+        </div>
+    </div>
+</form>
+<button @onclick="(async()=> await AddNewProduct())" class="btn btn-primary">Save</button>
+@code {
+
+    [Inject]
+    private ProductRepository ProductRepository { get; set; }
+    public string filePath { get; set; } = Path.Combine(Directory.GetCurrentDirectory(), @"wwwroot\Images");
+    protected override void OnInitialized()
+    {
+        NewProduct = new Product();
+        IsSuccessAdded = false;
+        base.OnInitialized();
+    }
+    private Product NewProduct { get; set; }
+    private bool IsSuccessAdded { get; set; }
+    private async Task AddNewProduct()
+    {
+        if (string.IsNullOrEmpty(NewProduct.Name)) return;
+
+
+
+        foreach (var file in SelectedFiles)
+        {
+            Stream stream = file.OpenReadStream();
+            var path = $"{filePath}\\{file.Name}";
+            FileStream fs = File.Create(path);
+            await stream.CopyToAsync(fs);
+            stream.Close();
+            fs.Close();
+            NewProduct.Image = file.Name;
+        }
+        NewProduct.Id = Guid.NewGuid();
+
+        ProductRepository.AddProduct(NewProduct);
+        NewProduct = new Product();
+        IsSuccessAdded = true;
+
+    }
+
+    private IReadOnlyCollection<IBrowserFile> SelectedFiles { get; set; }
+
+    private void OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        SelectedFiles = e.GetMultipleFiles();
+
+        this.StateHasChanged();
+    }
+}
