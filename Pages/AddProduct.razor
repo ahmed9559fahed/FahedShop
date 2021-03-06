@@ -2,12 +2,18 @@
 @using ShopLinux.Models
 @using ShopLinux.Repositories
 @using System.IO
+@using BlazorInputFile
+@using System
+@using System.Text
+@using Microsoft.AspNetCore.Hosting
+
+
 <h3 class="row justify-content-center">AddProduct</h3>
 <hr class="mb-2" />
 @if (IsSuccessAdded)
 {
     <div class="alert alert-success" role="alert">
-        success Add
+        success Add @FileName
     </div>
 }
 <form>
@@ -32,7 +38,7 @@
     <div class="form-group row">
         <label for="inputName" class="col-sm-2 col-form-label">Image</label>
         <div class="col-sm-10">
-            <InputFile OnChange="OnInputFileChange" multiple />
+            <BlazorInputFile.InputFile OnChange="HandleFileSelected" class="btn-primary" />
         </div>
     </div>
 </form>
@@ -50,36 +56,59 @@
     }
     private Product NewProduct { get; set; }
     private bool IsSuccessAdded { get; set; }
+
+    private string FileName { get; set; }
+
+    [Inject]
+    private  IWebHostEnvironment _environment { get; set; }
+
     private async Task AddNewProduct()
     {
         if (string.IsNullOrEmpty(NewProduct.Name)) return;
 
 
 
-        foreach (var file in SelectedFiles)
-        {
-            Stream stream = file.OpenReadStream();
-            var path = $"{filePath}\\{file.Name}";
-            FileStream fs = File.Create(path);
-            await stream.CopyToAsync(fs);
-            stream.Close();
-            fs.Close();
-            NewProduct.Image = file.Name;
-        }
-        NewProduct.Id = Guid.NewGuid();
+        //Stream stream = SelectedFile.OpenReadStream();
+        //var path = $"{filePath}\\{FileName}";
+        //FileStream fs = File.Create(path);
+        //await stream.CopyToAsync(fs);
+        //stream.Close();
+        //fs.Close();
 
+        var name = MyFile.Name;
+        var array = name.Split('.');
+        var filename = array[0] + ".jpg";
+        FileName = filename;
+        var ms = new MemoryStream();
+
+        await MyFile.Data.CopyToAsync(ms);
+        var path = Path.Combine(_environment.WebRootPath, "Images", FileName);
+
+        using (FileStream file = new FileStream(path, FileMode.Create, FileAccess.Write))
+        {
+            ms.WriteTo(file);
+        }
+        NewProduct.Image = FileName;
+        NewProduct.Id = Guid.NewGuid();
         ProductRepository.AddProduct(NewProduct);
         NewProduct = new Product();
         IsSuccessAdded = true;
 
     }
 
-    private IReadOnlyCollection<IBrowserFile> SelectedFiles { get; set; }
+    private IBrowserFile SelectedFile { get; set; }
 
     private void OnInputFileChange(InputFileChangeEventArgs e)
     {
-        SelectedFiles = e.GetMultipleFiles();
+        SelectedFile = e.GetMultipleFiles().First();
 
         this.StateHasChanged();
+    }
+
+    IFileListEntry MyFile;
+
+    void HandleFileSelected(IFileListEntry[] files)
+    {
+        MyFile = files.FirstOrDefault();
     }
 }
